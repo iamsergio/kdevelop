@@ -189,7 +189,7 @@ class QStringPrinter(PrinterBaseType):
         # or in case of Qt5, 'd' is an invalid pointer and the following lines might throw memory
         # access error. Hence the try/catch.
         try:
-            return self._val['d']['size']
+            return int(self._val['d']['size'])
         except:
             return 0
 
@@ -200,7 +200,7 @@ class QByteArrayPrinter(PrinterBaseType):
 
     def __init__(self, val):
         self._val = val
-        self._size = self._val['d']['size']
+        self._size = int(self._val['d']['size'])
         # Qt6 has d.ptr, Qt5 doesn't
         self._isQt6 = has_field(self._val['d'], 'ptr')
 
@@ -310,7 +310,7 @@ class QListPrinter(PrinterBaseType):
         self._isQt6 = has_field(self._d, 'size')
 
         if self._isQt6:
-            self._size = self._d['size']
+            self._size = int(self._d['size'])
         else:
             self._size = self._d['end'] - self._d['begin']
 
@@ -363,13 +363,16 @@ class QVectorPrinter(PrinterBaseType):
             return listPrinter.children()
         else:
             data = self._val['d'].cast(gdb.lookup_type("char").const().pointer()) + self._val['d']['offset']
-            return self._iterator(self._itype, data.cast(self._itype.pointer()), self._val['d']['size'])
+            size = int(self._val['d']['size'])
+            return self._iterator(self._itype, data.cast(self._itype.pointer()), size)
 
     def num_children(self):
-        return self._val['d']['size']
+        size = int(self._val['d']['size'])
+        return size
 
     def to_string(self):
-        return "%s<%s> (size = %s)" % ( self._container, self._itype, self.num_children() )
+        ret = "%s<%s> (size = %s)" % ( self._container, self._itype, self.num_children() )
+        return ret
 
 class QLinkedListPrinter(PrinterBaseType):
     "Print a QLinkedList"
@@ -402,7 +405,7 @@ class QLinkedListPrinter(PrinterBaseType):
         return self._iterator(self._itype, self._val['e']['n'], self.num_children())
 
     def num_children(self):
-        return self._val['d']['size']
+        return int(self._val['d']['size'])
 
     def to_string(self):
         return "QLinkedList<%s> (size = %s)" % ( self._itype, self.num_children() )
@@ -1087,7 +1090,7 @@ class QSetPrinter(PrinterBaseType):
 
     def num_children(self):
         d = self._val['q_hash']['d']
-        return d['size'] if d else 0
+        return int(d['size']) if d else 0
 
     def to_string(self):
         return "QSet<%s> (size = %s)" % ( self._val.type.template_argument(0), self.num_children() )
